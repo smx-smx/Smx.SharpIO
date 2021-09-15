@@ -8,6 +8,7 @@
     <Authors>Stefano Moioli</Authors>
     <Company />
     <Product>SharpIO</Product>
+    <Version>1.0.0-alpha</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
