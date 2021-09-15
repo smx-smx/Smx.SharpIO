@@ -29,8 +29,6 @@ namespace Smx.SharpIO
 				mmapFlags = MemoryMappedFileAccess.ReadWrite;
 			}
 
-			DisposeMFile();
-
 			// memory mapped files cannot be backed by an empty file
 			if(fs.Length == 0) {
 				fs.SetLength(1);
@@ -49,6 +47,7 @@ namespace Smx.SharpIO
 		}
 
 		public void SetLength(long newSize) {
+			DisposeMFile();
 			this.fs.SetLength(newSize);
 			RemapFile();
 		}
