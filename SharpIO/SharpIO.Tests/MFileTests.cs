@@ -10,6 +10,7 @@ using NUnit.Framework;
 using Smx.SharpIO;
 using System;
 using System.IO;
+using System.Text;
 
 namespace SharpIO.Tests
 {
@@ -19,19 +20,69 @@ namespace SharpIO.Tests
 		public void Setup() {
 		}
 
+		private string GetFilePath(string fileName) {
+			return Path.Combine(Path.GetTempPath(), fileName);
+		}
+
+		private MFile OpenMFile(string fileName, bool writable = false) {
+			return MFile.Open(
+				GetFilePath(fileName), 
+				FileMode.OpenOrCreate, 
+				(writable) ? FileAccess.ReadWrite : FileAccess.Read,
+				FileShare.Read);
+		}
+
 		[Test]
 		public void TestExtend() {
-			var filePath = Path.Combine(Path.GetTempPath(), "mfile.bin");
-			using (var mf = MFile.Open(filePath,
-				FileMode.OpenOrCreate,
-				FileAccess.ReadWrite,
-				FileShare.ReadWrite))
-			{
+			var fileName = "mfile.bin";
+
+			using (var mf = OpenMFile(fileName, writable: true)) {
 				mf.SetLength(10);
 			}
 
-			using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+			using (var fs = new FileStream(
+				GetFilePath(fileName),
+				FileMode.Open, FileAccess.Read, FileShare.Read)
+			) {
 				Assert.AreEqual(10, fs.Length);
+			}
+		}
+
+		[Test]
+		public void TestSpanStream() {
+			var filePath = Path.Combine(Path.GetTempPath(), "mfile.bin");
+			using (var mf = OpenMFile(filePath, writable: true)) {
+				mf.SetLength(64);
+				var sst = new SpanStream(mf);
+				sst.PerformAt(60, () => {
+					sst.WriteString("FOOT");
+				});
+				sst.Seek(4, SeekOrigin.Current);
+				sst.WriteUInt32(0xDEADBEEF);
+				sst.WriteUInt16(0xC0FF);
+				sst.WriteByte(0xF0);
+				sst.WriteCString("test");
+
+				for(byte i=0; i<10; i++) {
+					sst.WriteByte(i);
+				}
+
+				sst.PerformAt(0, () => {
+					sst.WriteString("HEAD");
+				});
+
+				sst.Seek(0, SeekOrigin.Begin);
+				Assert.AreEqual("HEAD", sst.ReadString(4));
+				Assert.AreEqual(0xDEADBEEF, sst.ReadUInt32());
+				Assert.AreEqual(0xC0FF, sst.ReadUInt16());
+				Assert.AreEqual(0xF0, sst.ReadByte());
+				Assert.AreEqual("test", sst.ReadCString());
+				for (byte i = 0; i < 10; i++) {
+					Assert.AreEqual(i, sst.ReadByte());
+				}
+				Assert.AreEqual("FOOT", sst.PerformAt(60, () => {
+					return sst.ReadString(4);
+				}));
 			}
 		}
 	}

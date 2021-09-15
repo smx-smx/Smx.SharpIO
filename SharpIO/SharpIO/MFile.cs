@@ -70,9 +70,5 @@ namespace Smx.SharpIO
 			DisposeMFile();
 			fs.Dispose();
 		}
-
-		public SpanStream NewSpanStream() {
-			return new SpanStream(Span.Memory);
-		}
 	}
 }

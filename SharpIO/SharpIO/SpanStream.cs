@@ -76,6 +76,13 @@ namespace Smx.SharpIO
 			}
 		}
 
+		public string ReadString(int length, Encoding encoding = null) {
+			if(encoding == null) {
+				encoding = Encoding.ASCII;
+			}
+			byte[] bytes = ReadBytes(length);
+			return encoding.GetString(bytes);
+		}
 		public byte[] ReadBytes(int count) {
 			byte[] ret = Memory.Slice(pos, count).ToArray();
 			pos += count;
@@ -270,36 +277,44 @@ namespace Smx.SharpIO
 			pos += data.Length;
 		}
 
-		public string ReadString16NoTerm() {
-			int length = ReadByte();
-			string str = Encoding.ASCII.GetString(ReadBytes(length));
-			return str;
+		public void WriteString(
+			string str,
+			bool lengthPrefix = false, int prefixLength = 4,
+			bool nullTerminator = false,
+			Encoding encoding = null
+		) {
+			if(encoding == null) {
+				encoding = Encoding.ASCII;
+			}
+
+			if (lengthPrefix) {
+				int maxLength = 2 << ((8 * prefixLength) - 1);
+				if(str.Length > maxLength) {
+					throw new ArgumentException("Prefix length is too short");
+				}
+				switch (prefixLength) {
+					case 1: WriteByte((byte)str.Length); break;
+					case 2: WriteUInt16((ushort)str.Length); break;
+					case 4: WriteUInt32((uint)str.Length); break;
+					case 8: WriteUInt64((ulong)str.Length); break;
+					default:
+						throw new NotSupportedException($"Prefix length {prefixLength} not supported");
+				}
+			}
+
+			int bufSize = encoding.GetByteCount(str);
+			if (nullTerminator) {
+				bufSize += encoding.GetByteCount("\0");
+			}
+			byte[] buf = new byte[bufSize];
+			encoding.GetEncoder().GetBytes(str, buf, true);
+
+			WriteBytes(buf);
 		}
 
-		public string ReadString16() {
-			int length = ReadByte();
-			string str = Encoding.ASCII.GetString(ReadBytes(length));
-			ReadByte(); //null terminator
-			return str;
-		}
-
-		public string ReadString32() {
-			int length = ReadInt32();
-			string str = Encoding.ASCII.GetString(ReadBytes(length));
-			ReadByte(); //null terminator
-			return str;
-		}
-
-		public void WriteString(string str) {
-			WriteUInt32((uint)str.Length);
-			WriteBytes(Encoding.ASCII.GetBytes(str));
-			WriteByte(0x00);
-		}
-
-		public void WriteCString(string str) {
-			WriteBytes(Encoding.ASCII.GetBytes(str));
-			WriteByte(0x00);
-		}
+		public void WriteCString(string str) => WriteString(str,
+			lengthPrefix: false,
+			nullTerminator: true, encoding: Encoding.ASCII);
 
 
 		public unsafe T ReadStruct<T>() where T : unmanaged {
@@ -320,6 +335,10 @@ namespace Smx.SharpIO
 
 		public SpanStream(Memory<byte> data) : this() {
 			this.Memory = data;
+		}
+
+		public SpanStream(MFile mf) : this() {
+			this.Memory = mf.Span.Memory;
 		}
 
 		private SpanStream() {
@@ -433,6 +452,7 @@ namespace Smx.SharpIO
 			var start = Memory.Span.Slice(pos, data.Length);
 			var dspan = new Span<byte>(data);
 			dspan.CopyTo(start);
+			pos += data.Length;
 		}
 
 		public short ReadInt16() => (short)u16Reader();
