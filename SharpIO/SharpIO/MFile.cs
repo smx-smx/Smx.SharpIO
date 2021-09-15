@@ -18,30 +18,57 @@ namespace Smx.SharpIO
 {
 	public class MFile : IDisposable
 	{
-		public readonly MemoryMappedSpan<byte> Span;
+		private readonly FileStream fs;
 
-		public MFile(MemoryMappedSpan<byte> span) {
-			this.Span = span;
+		private MemoryMappedFile mmf;
+		public MemoryMappedSpan<byte> Span;
+
+		private void RemapFile() {
+			MemoryMappedFileAccess mmapFlags = MemoryMappedFileAccess.Read;
+			if (fs.CanWrite) {
+				mmapFlags = MemoryMappedFileAccess.ReadWrite;
+			}
+
+			DisposeMFile();
+
+			// memory mapped files cannot be backed by an empty file
+			if(fs.Length == 0) {
+				fs.SetLength(1);
+			}
+
+			this.mmf = MemoryMappedFile.CreateFromFile(
+				fs, null, 0,
+				mmapFlags, HandleInheritability.Inheritable, true
+			);
+			this.Span = new MemoryMappedSpan<byte>(mmf, (int)fs.Length, mmapFlags);
+		}
+
+		private MFile(FileStream fs) {
+			this.fs = fs;
+			this.RemapFile();
+		}
+
+		public void SetLength(long newSize) {
+			this.fs.SetLength(newSize);
+			RemapFile();
 		}
 
 		public static MFile Open(string filePath, FileMode fileMode, FileAccess fileAccess, FileShare fileShare) {
 			FileStream fs = new FileStream(filePath, fileMode, fileAccess, fileShare);
+			return new MFile(fs);
+		}
 
-			MemoryMappedFileAccess mmapFlags = MemoryMappedFileAccess.Read;
-			if (fileAccess.HasFlag(FileAccess.Write)) {
-				mmapFlags = MemoryMappedFileAccess.ReadWrite;
-			}
+		private void DisposeMFile() {
+			Span?.Dispose();
+			Span = null;
 
-			MemoryMappedFile mmf = MemoryMappedFile.CreateFromFile(
-				fs, null, 0,
-				mmapFlags, HandleInheritability.Inheritable, false
-			);
-			MemoryMappedSpan<byte> span = new MemoryMappedSpan<byte>(mmf, (int)fs.Length, mmapFlags);
-			return new MFile(span);
+			mmf?.Dispose();
+			mmf = null;
 		}
 
 		public void Dispose() {
-			Span.Dispose();
+			DisposeMFile();
+			fs.Dispose();
 		}
 
 		public SpanStream NewSpanStream() {

@@ -46,6 +46,7 @@ namespace Smx.SharpIO
 		}
 
 		protected override void Dispose(bool disposing) {
+			acc.SafeMemoryMappedViewHandle.ReleasePointer();
 			acc.Dispose();
 		}
 	}

@@ -330,17 +330,6 @@ namespace Smx.SharpIO
 			this.Memory = new Memory<byte>(newData);
 		}
 
-		public void Extend(int newSize) {
-			if (newSize <= Memory.Length) {
-				throw new ArgumentOutOfRangeException($"New size {newSize} is shorter than current {Memory.Length}");
-			}
-			byte[] data = new byte[newSize];
-			var newMem = new Memory<byte>(data);
-			Memory.CopyTo(newMem);
-
-			this.Memory = newMem;
-		}
-
 		public unsafe T ReadEnum<T>() where T : unmanaged {
 			T value = ReadFlagsEnum<T>();
 
