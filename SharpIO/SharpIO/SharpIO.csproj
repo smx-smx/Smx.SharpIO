@@ -9,6 +9,10 @@
     <Company />
     <Product>SharpIO</Product>
     <Version>1.0.0-alpha</Version>
+    <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/smx-smx/Smx.SharpIO</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/smx-smx/Smx.SharpIO</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
