@@ -253,7 +253,7 @@ namespace Smx.SharpIO
 				.Slice((int)Position, count)
 				.ToArray()
 				.CopyTo(buffer, offset);
-			Seek(count, SeekOrigin.Current);
+			pos += count;
 			return count;
 		}
 
@@ -490,6 +490,7 @@ namespace Smx.SharpIO
 			Span<byte> source = ((Span<byte>)buffer).Slice(offset, count);
 			Span<byte> dest = Memory.Span.Slice((int)Position, count);
 			source.CopyTo(dest);
+			Position += count;
 		}
 	}
 }

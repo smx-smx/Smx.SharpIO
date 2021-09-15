@@ -49,6 +49,21 @@ namespace SharpIO.Tests
 		}
 
 		[Test]
+		public void TestEndianness() {
+			byte[] buf = new byte[48];
+			var sst = new SpanStream(buf);
+			sst.Endianness = Endianness.BigEndian;
+			{
+				sst.WriteUInt32(0xDEADBEEF);
+			}
+			sst.Seek(0, SeekOrigin.Begin);
+			sst.Endianness = Endianness.LittleEndian;
+			{
+				Assert.AreEqual(0xEFBEADDE, sst.ReadUInt32());
+			}
+		}
+
+		[Test]
 		public void TestSpanStream() {
 			var filePath = Path.Combine(Path.GetTempPath(), "mfile.bin");
 			using (var mf = OpenMFile(filePath, writable: true)) {
@@ -67,6 +82,8 @@ namespace SharpIO.Tests
 					sst.WriteByte(i);
 				}
 
+				sst.Write(new byte[] { 0xfa, 0xfe }, 0, 2);
+
 				sst.PerformAt(0, () => {
 					sst.WriteString("HEAD");
 				});
@@ -80,6 +97,12 @@ namespace SharpIO.Tests
 				for (byte i = 0; i < 10; i++) {
 					Assert.AreEqual(i, sst.ReadByte());
 				}
+
+				var bufRead = new byte[2];
+				sst.Read(bufRead, 0, 2);
+				Assert.AreEqual(0xfa, bufRead[0]);
+				Assert.AreEqual(0xfe, bufRead[1]);
+
 				Assert.AreEqual("FOOT", sst.PerformAt(60, () => {
 					return sst.ReadString(4);
 				}));
