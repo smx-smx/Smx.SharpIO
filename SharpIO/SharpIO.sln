@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31515.178
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpIO", "SharpIO\SharpIO.csproj", "{FF3FD453-4C99-4828-AC11-9E384388C4D2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FF3FD453-4C99-4828-AC11-9E384388C4D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF3FD453-4C99-4828-AC11-9E384388C4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF3FD453-4C99-4828-AC11-9E384388C4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF3FD453-4C99-4828-AC11-9E384388C4D2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ED5B510F-4A91-4F66-80AE-5BD0FEB33F24}
+	EndGlobalSection
+EndGlobal
