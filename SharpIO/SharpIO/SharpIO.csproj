@@ -4,6 +4,10 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Smx.SharpIO</AssemblyName>
     <RootNamespace>Smx.SharpIO</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Stefano Moioli</Authors>
+    <Company />
+    <Product>SharpIO</Product>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
