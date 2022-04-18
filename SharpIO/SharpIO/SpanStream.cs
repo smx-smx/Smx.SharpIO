@@ -333,8 +333,9 @@ namespace Smx.SharpIO
 			this.Memory = other.Memory.Slice(other.pos);
 		}
 
-		public SpanStream(Memory<byte> data) : this() {
+		public SpanStream(Memory<byte> data, Endianness endianness = Endianness.LittleEndian) : this() {
 			this.Memory = data;
+			this.Endianness = endianness;
 		}
 
 		public SpanStream(MFile mf) : this() {
@@ -437,8 +438,12 @@ namespace Smx.SharpIO
 			return Position;
 		}
 
+		public SpanStream SliceHere() {
+			return new SpanStream(this.Memory.Slice(this.pos), this.endianness);
+		}
+
 		public SpanStream SliceHere(int length) {
-			return new SpanStream(this.Memory.Slice(this.pos, length));
+			return new SpanStream(this.Memory.Slice(this.pos, length), this.endianness);
 		}
 
 		public virtual byte[] ReadRemaining() {
