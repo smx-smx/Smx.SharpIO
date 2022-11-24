@@ -31,11 +31,17 @@ namespace Smx.SharpIO
 		private WriterDelegate<ulong> u64Writer;
 
 		private int pos;
+		private int marker;
 
 		public override long Position {
 			get => pos;
 			set => pos = (int)value;
 		}
+
+		public void Mark() {
+			marker = pos;
+		}
+
 		public long Remaining => Length - Position;
 		public override long Length => Memory.Length;
 
@@ -344,6 +350,11 @@ namespace Smx.SharpIO
 
 		private SpanStream() {
 			SetDelegates();
+			marker = pos;
+		}
+
+		public int SizeOf() {
+			return pos - marker;
 		}
 
 		public void Replace(byte[] newData) {
