@@ -1,6 +1,6 @@
 #region License
 /*
- * Copyright (C) 2021 Stefano Moioli <smxdev4@gmail.com>
+ * Copyright (C) 2024 Stefano Moioli <smxdev4@gmail.com>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,6 +11,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
 using System.Text;
+using Smx.SharpIO.Memory;
 
 namespace Smx.SharpIO
 {
@@ -20,6 +21,7 @@ namespace Smx.SharpIO
 
 		private readonly MemoryMappedViewAccessor acc;
 		private readonly byte* dptr = null;
+		private bool disposed = false;
 
 		public MemoryMappedSpan(MemoryMappedFile mf, int length, MemoryMappedFileAccess mmapFlags) {
 			this.Length = length;
@@ -43,11 +45,18 @@ namespace Smx.SharpIO
 
 		public void Dispose() {
 			Dispose(true);
+			GC.SuppressFinalize(this);
 		}
 
 		protected override void Dispose(bool disposing) {
-			acc.SafeMemoryMappedViewHandle.ReleasePointer();
-			acc.Dispose();
+			if (disposed) {
+				return;
+			}
+			if (disposing) {
+				acc.SafeMemoryMappedViewHandle.ReleasePointer();
+				acc.Dispose();
+			}
+			disposed = true;
 		}
 	}
 }
