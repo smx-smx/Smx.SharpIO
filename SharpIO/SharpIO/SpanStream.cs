@@ -450,6 +450,10 @@ namespace Smx.SharpIO
 			return Position;
 		}
 
+		public SpanStream Slice(int start, int length) {
+			return new SpanStream(this.Memory.Slice(start, length), endianness);
+		}
+
 		public SpanStream SliceHere() {
 			return new SpanStream(this.Memory.Slice(this.pos), this.endianness);
 		}

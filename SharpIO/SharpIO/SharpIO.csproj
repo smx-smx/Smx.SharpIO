@@ -8,7 +8,7 @@
     <Authors>Stefano Moioli</Authors>
     <Company />
     <Product>SharpIO</Product>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/smx-smx/Smx.SharpIO</RepositoryUrl>
     <PackageProjectUrl>https://github.com/smx-smx/Smx.SharpIO</PackageProjectUrl>

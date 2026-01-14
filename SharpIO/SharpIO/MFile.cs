@@ -20,8 +20,8 @@ namespace Smx.SharpIO
 	{
 		private readonly FileStream fs;
 
-		private MemoryMappedFile mmf;
-		public MemoryMappedSpan<byte> Span;
+		private MemoryMappedFile? mmf;
+		public MemoryMappedSpan<byte>? Span;
 
 		private void RemapFile() {
 			MemoryMappedFileAccess mmapFlags = MemoryMappedFileAccess.Read;
@@ -41,7 +41,7 @@ namespace Smx.SharpIO
 			this.Span = new MemoryMappedSpan<byte>(mmf, (int)fs.Length, mmapFlags);
 		}
 
-		private MFile(FileStream fs) {
+		public MFile(FileStream fs) {
 			this.fs = fs;
 			this.RemapFile();
 		}
