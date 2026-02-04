@@ -153,8 +153,15 @@ namespace Smx.SharpIO
 
 		private int FieldSize(FieldInfo field) {
 			if (field.FieldType.IsArray) {
-				MarshalAsAttribute attr = (MarshalAsAttribute)field.GetCustomAttribute(typeof(MarshalAsAttribute), false);
-				return Marshal.SizeOf(field.FieldType.GetElementType()) * attr.SizeConst;
+				var attr = field.GetCustomAttribute<MarshalAsAttribute>();
+				if(attr == null) {
+					throw new InvalidOperationException("Missing [MarshalAs] attribute");
+				}
+				var t = field.FieldType.GetElementType();
+				if(t == null) {
+					throw new InvalidOperationException("Cannot get array element type");
+				}
+				return Marshal.SizeOf(t) * attr.SizeConst;
 			} else {
 				if (field.FieldType.IsEnum) {
 					return Marshal.SizeOf(Enum.GetUnderlyingType(field.FieldType));
@@ -167,8 +174,15 @@ namespace Smx.SharpIO
 			var type = typeof(T);
 			int offset = Marshal.OffsetOf(type, field.Name).ToInt32();
 			if (field.FieldType.IsArray) {
-				MarshalAsAttribute attr = (MarshalAsAttribute)field.GetCustomAttribute(typeof(MarshalAsAttribute), false);
-				int subSize = Marshal.SizeOf(field.FieldType.GetElementType());
+				var attr = field.GetCustomAttribute<MarshalAsAttribute>();
+				if(attr == null) {
+					throw new InvalidOperationException("Missing [MarshalAs] attribute");
+				}
+				var t = field.FieldType.GetElementType();
+				if(t == null) {
+					throw new InvalidOperationException("Cannot get field type");
+				}
+				int subSize = Marshal.SizeOf(t);
 				for (int i = 0; i < attr.SizeConst; i++) {
 					Array.Reverse(data, offset + (i * subSize), subSize);
 				}
@@ -180,17 +194,20 @@ namespace Smx.SharpIO
 		private Endianness defaultEndianess = Endianness.LittleEndian;
 
 		/* Adapted from http://stackoverflow.com/a/2624377 */
-		private T RespectEndianness<T>(T data) {
+		private T? RespectEndianness<T>(T data) where T : notnull {
 			var structEndianness = this.defaultEndianess;
 			var type = typeof(T);
 			if (type.IsDefined(typeof(EndianAttribute), false)) {
-				EndianAttribute attr = (EndianAttribute)type
-					.GetCustomAttribute(typeof(EndianAttribute), false);
+				var attr = type.GetCustomAttribute<EndianAttribute>();
+				if(attr == null) {
+					throw new InvalidOperationException("Missing [Endian] attribute");
+				}
 				structEndianness = attr.Endianness;
 			}
 
 			var sz = Marshal.SizeOf(data);
 			var mem = Marshal.AllocHGlobal(sz);
+			T? result = data;
 			try {
 				Marshal.StructureToPtr(data, mem, false);
 				var bytes = new byte[sz];
@@ -212,12 +229,12 @@ namespace Smx.SharpIO
 					}
 				}
 				Marshal.Copy(bytes, 0, mem, sz);
-				data = Marshal.PtrToStructure<T>(mem);
+				result = Marshal.PtrToStructure<T>(mem);
 			} finally {
 				Marshal.FreeHGlobal(mem);
 			}
 
-			return data;
+			return result;
 		}
 
 		private T AdjustFieldEndianness<T>(T value) where T : unmanaged {
@@ -289,7 +306,7 @@ namespace Smx.SharpIO
 			string str,
 			bool lengthPrefix = false, int prefixLength = 4,
 			bool nullTerminator = false,
-			Encoding encoding = null
+			Encoding? encoding = null
 		) {
 			if(encoding == null) {
 				encoding = Encoding.ASCII;
@@ -347,13 +364,19 @@ namespace Smx.SharpIO
 		}
 
 		public SpanStream(MFile mf) : this() {
-			this.Memory = mf.Span.Memory;
+			var span = mf.Span;
+			if(span == null) {
+				throw new InvalidOperationException("MFile is not mapped");
+			}
+			this.Memory = span.Memory;
 		}
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 		private SpanStream() {
 			SetDelegates();
 			marker = pos;
 		}
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 		public long SizeOf() {
 			return pos - marker;
@@ -466,9 +489,6 @@ namespace Smx.SharpIO
 		public virtual byte[] ReadRemaining() {
 			return ReadBytes((int)Remaining);
 		}
-
-		public byte ReadByte() => Read<byte>();
-		public void WriteByte(byte value) => Write(value);
 
 		public void WriteBytes(byte[] data) {
 			var start = Memory.Span.Slice(pos, data.Length);

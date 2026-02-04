@@ -29,7 +29,7 @@ namespace Smx.SharpIO
 			return new DisposableGCHandle(value, GCHandleType.Pinned);
 		}
 
-		public object Target {
+		public object? Target {
 			get => gch.Target;
 		}
 

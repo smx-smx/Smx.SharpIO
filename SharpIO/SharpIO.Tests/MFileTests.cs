@@ -99,7 +99,7 @@ namespace SharpIO.Tests
 				}
 
 				var bufRead = new byte[2];
-				sst.Read(bufRead, 0, 2);
+				sst.ReadExactly(bufRead, 0, 2);
 				Assert.AreEqual(0xfa, bufRead[0]);
 				Assert.AreEqual(0xfe, bufRead[1]);
 
