@@ -1,5 +1,3 @@
-using System;
-using System.Runtime.InteropServices;
 using NUnit.Framework;
 using Smx.SharpIO.Memory.Buffers;
 

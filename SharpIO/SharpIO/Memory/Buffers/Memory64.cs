@@ -27,14 +27,12 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
             ThrowHelper.ThrowArgumentOutOfRangeException();
         }
 
-        // Case 1: Managed Array
         if (value._object is T[] array)
         {
             return new Memory<T>(array, (int)value._indexOrPointer, (int)value._length);
         }
 
-        // Case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
-        if (value._object is MemoryManager<T> manager)
+		if (value._object is MemoryManager64<T> manager)
         {
             return manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
         }

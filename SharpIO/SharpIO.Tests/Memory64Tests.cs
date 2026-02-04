@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using NUnit.Framework;
 using Smx.SharpIO.Memory.Buffers;
 
@@ -33,6 +34,22 @@ namespace Smx.SharpIO.Tests
             Assert.AreEqual(3, dest.Span[2]);
         }
         
+
+        [Test]
+        public void ImplicitConversion_SameReference()
+        {
+            var source64 = new Memory64<int>([1, 2, 3]);
+            Memory<int> source = source64;
+
+			source.Span[0] = 4;
+			source.Span[1] = 5;
+			source.Span[2] = 6;
+
+			Assert.AreEqual(source64.Span[0], 4);
+			Assert.AreEqual(source64.Span[1], 5);
+			Assert.AreEqual(source64.Span[2], 6);
+		}
+
         [Test]
         public void TryCopyTo_Works()
         {
