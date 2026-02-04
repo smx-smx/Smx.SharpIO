@@ -19,6 +19,36 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
     internal readonly long _indexOrPointer;
     internal readonly long _length;
 
+    public static implicit operator ReadOnlyMemory<T>(ReadOnlyMemory64<T> value)
+    {
+        // Standard Memory<T> is limited to int.MaxValue
+        if ((ulong)value._length > int.MaxValue)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException();
+        }
+
+        // Case 1: Managed Array
+        if (value._object is T[] array)
+        {
+            return new ReadOnlyMemory<T>(array, (int)value._indexOrPointer, (int)value._length);
+        }
+
+        // Case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
+        if (value._object is MemoryManager<T> manager)
+        {
+            return manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+        }
+
+        // Case 3: Native Pointers (void*)
+        if (value._object == null)
+        {
+			var mgr = new UnmanagedMemoryManager<T>(new nint(value._indexOrPointer), (int)value._length);
+            return mgr.Memory;
+        }
+
+        return default;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlyMemory64<T>(T[]? array) {
         // Reuse Memory64 logic for safety/simplicity

@@ -21,6 +21,14 @@ public readonly ref struct Span64<T>
     public long Length => _length;
     public bool IsEmpty => _length == 0;
 
+    public static implicit operator Span<T>(Span64<T> span64) {
+        if (span64._length > int.MaxValue)
+        {
+            throw new OverflowException("Span64 length exceeds the 32-bit limit of Span<T>.");
+        }
+        return MemoryMarshal.CreateSpan(ref span64._reference, (int)span64._length);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Span64<T>(T[]? array) {
         return new Span64<T>(array);

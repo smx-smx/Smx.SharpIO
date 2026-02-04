@@ -19,6 +19,36 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
     private readonly long _indexOrPointer;
     private readonly long _length;
 
+    public static implicit operator Memory<T>(Memory64<T> value)
+    {
+        // Standard Memory<T> is limited to int.MaxValue
+        if ((ulong)value._length > int.MaxValue)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException();
+        }
+
+        // Case 1: Managed Array
+        if (value._object is T[] array)
+        {
+            return new Memory<T>(array, (int)value._indexOrPointer, (int)value._length);
+        }
+
+        // Case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
+        if (value._object is MemoryManager<T> manager)
+        {
+            return manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+        }
+
+        // Case 3: Native Pointers (void*)
+        if (value._object == null)
+        {
+			var mgr = new UnmanagedMemoryManager<T>(new nint(value._indexOrPointer), (int)value._length);
+            return mgr.Memory;
+        }
+
+        return default;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator Memory64<T>(T[] array) {
         return new Memory64<T>(array);
