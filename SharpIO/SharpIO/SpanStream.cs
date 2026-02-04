@@ -1,6 +1,6 @@
 #region License
 /*
- * Copyright (C) 2024 Stefano Moioli <smxdev4@gmail.com>
+ * Copyright (C) 2026 Stefano Moioli <smxdev4@gmail.com>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Smx.SharpIO.Extensions;
+using Smx.SharpIO.Memory.Buffers;
 
 namespace Smx.SharpIO
 {
@@ -31,8 +32,8 @@ namespace Smx.SharpIO
 		private WriterDelegate<uint> u32Writer;
 		private WriterDelegate<ulong> u64Writer;
 
-		private int pos;
-		private int marker;
+		private long pos;
+		private long marker;
 
 		public override long Position {
 			get => pos;
@@ -46,8 +47,8 @@ namespace Smx.SharpIO
 		public long Remaining => Length - Position;
 		public override long Length => Memory.Length;
 
-		public Memory<byte> Memory { get; private set; }
-		public Span<byte> Span => Memory.Span;
+		public Memory64<byte> Memory { get; private set; }
+		public Span64<byte> Span => Memory.Span;
 
 		private Endianness endianness = Endianness.LittleEndian;
 		public Endianness Endianness {
@@ -83,7 +84,7 @@ namespace Smx.SharpIO
 			}
 		}
 
-		public string ReadString(int length, Encoding encoding = null) {
+		public string ReadString(int length, Encoding? encoding = null) {
 			if(encoding == null) {
 				encoding = Encoding.ASCII;
 			}
@@ -250,7 +251,7 @@ namespace Smx.SharpIO
 
 		public unsafe T Read<T>() where T : unmanaged {
 			var start = Memory.Span.Slice(pos, sizeof(T));
-			T ret = MemoryMarshal.Cast<byte, T>(start)[0];
+			T ret = MemoryMarshal64.Cast<byte, T>(start)[0];
 			pos += sizeof(T);
 			return ret;
 		}
@@ -266,7 +267,7 @@ namespace Smx.SharpIO
 
 		public unsafe void Write<T>(T value) where T : unmanaged {
 			var start = Memory.Span.Slice(pos, sizeof(T));
-			MemoryMarshal.Cast<byte, T>(start)[0] = value;
+			MemoryMarshal64.Cast<byte, T>(start)[0] = value;
 			pos += sizeof(T);
 		}
 
@@ -274,12 +275,12 @@ namespace Smx.SharpIO
 			Memory.Span.Write<T>((int)offset, value);
 		}
 
-		public void WriteMemory<T>(Memory<T> data) where T : unmanaged {
+		public void WriteMemory<T>(Memory64<T> data) where T : unmanaged {
 			data.CopyTo(Memory, pos);
 			pos += data.Length;
 		}
 
-		public void WriteSpan<T>(Span<T> data) where T : unmanaged {
+		public void WriteSpan<T>(Span64<T> data) where T : unmanaged {
 			data.CopyTo(Span, pos);
 			pos += data.Length;
 		}
@@ -329,7 +330,7 @@ namespace Smx.SharpIO
 			var start = Memory.Span.Slice(pos, length);
 
 			T ret;
-			ret = MemoryMarshal.Cast<byte, T>(start)[0];
+			ret = MemoryMarshal64.Cast<byte, T>(start)[0];
 			ret = RespectEndianness(ret);
 
 			pos += length;
@@ -340,7 +341,7 @@ namespace Smx.SharpIO
 			this.Memory = other.Memory.Slice(other.pos);
 		}
 
-		public SpanStream(Memory<byte> data, Endianness endianness = Endianness.LittleEndian) : this() {
+		public SpanStream(Memory64<byte> data, Endianness endianness = Endianness.LittleEndian) : this() {
 			this.Memory = data;
 			this.Endianness = endianness;
 		}
@@ -354,12 +355,12 @@ namespace Smx.SharpIO
 			marker = pos;
 		}
 
-		public int SizeOf() {
+		public long SizeOf() {
 			return pos - marker;
 		}
 
 		public void Replace(byte[] newData) {
-			this.Memory = new Memory<byte>(newData);
+			this.Memory = new Memory64<byte>(newData);
 		}
 
 		public unsafe T ReadEnum<T>() where T : unmanaged {
@@ -471,7 +472,7 @@ namespace Smx.SharpIO
 
 		public void WriteBytes(byte[] data) {
 			var start = Memory.Span.Slice(pos, data.Length);
-			var dspan = new Span<byte>(data);
+			var dspan = new Span64<byte>(data);
 			dspan.CopyTo(start);
 			pos += data.Length;
 		}
@@ -508,8 +509,8 @@ namespace Smx.SharpIO
 		}
 
 		public override void Write(byte[] buffer, int offset, int count) {
-			Span<byte> source = ((Span<byte>)buffer).Slice(offset, count);
-			Span<byte> dest = Memory.Span.Slice((int)Position, count);
+			Span64<byte> source = ((Span64<byte>)buffer).Slice(offset, count);
+			Span64<byte> dest = Memory.Span.Slice((int)Position, count);
 			source.CopyTo(dest);
 			Position += count;
 		}

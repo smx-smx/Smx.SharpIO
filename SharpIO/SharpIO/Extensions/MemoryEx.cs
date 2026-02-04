@@ -7,6 +7,7 @@
  */
 #endregion
 using Smx.SharpIO.Memory;
+using Smx.SharpIO.Memory.Buffers;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -23,6 +24,16 @@ namespace Smx.SharpIO.Extensions
 			if (typeof(TFrom) == typeof(TTo)) return (Memory<TTo>)(object)from;
 
 			return new CastMemoryManager<TFrom, TTo>(from).Memory;
+		}
+
+		public static Memory64<TTo> Cast<TFrom, TTo>(this Memory64<TFrom> from) 
+			where TFrom : unmanaged
+			where TTo : unmanaged
+		{
+			// avoid the extra allocation/indirection, at the cost of a gen-0 box
+			if (typeof(TFrom) == typeof(TTo)) return (Memory64<TTo>)(object)from;
+
+			return new CastMemoryManager64<TFrom, TTo>(from).Memory;
 		}
 	}
 }

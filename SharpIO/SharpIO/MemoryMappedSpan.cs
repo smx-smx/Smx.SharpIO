@@ -1,21 +1,20 @@
 #region License
 /*
- * Copyright (C) 2024 Stefano Moioli <smxdev4@gmail.com>
+ * Copyright (C) 2026 Stefano Moioli <smxdev4@gmail.com>
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 #endregion
 using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
-using System.Text;
-using Smx.SharpIO.Memory;
+using Smx.SharpIO.Memory.Buffers;
 
 namespace Smx.SharpIO
 {
-	public unsafe class MemoryMappedSpan<T> : MemoryManager<T>, IDisposable where T : unmanaged
+	public unsafe class MemoryMappedSpan<T> : MemoryManager64<T>, IDisposable where T : unmanaged
 	{
 		public readonly int Length;
 
@@ -29,11 +28,11 @@ namespace Smx.SharpIO
 			this.acc.SafeMemoryMappedViewHandle.AcquirePointer(ref dptr);
 		}
 
-		public override Span<T> GetSpan() {
-			return new Span<T>((void*)dptr, Length);
+		public override Span64<T> GetSpan() {
+			return new Span64<T>((void*)dptr, Length);
 		}
 
-		public override MemoryHandle Pin(int elementIndex = 0) {
+		public override MemoryHandle Pin(long elementIndex = 0) {
 			if (elementIndex < 0 || elementIndex >= Length) {
 				throw new ArgumentOutOfRangeException(nameof(elementIndex));
 			}
@@ -43,9 +42,10 @@ namespace Smx.SharpIO
 
 		public override void Unpin() { }
 
-		public void Dispose() {
+		public override void Dispose() {
 			Dispose(true);
 			GC.SuppressFinalize(this);
+			base.Dispose();
 		}
 
 		protected override void Dispose(bool disposing) {

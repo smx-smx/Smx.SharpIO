@@ -11,6 +11,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Smx.SharpIO.Memory.Buffers;
 
 namespace Smx.SharpIO.Memory
 {
@@ -31,6 +32,24 @@ namespace Smx.SharpIO.Memory
 
 		protected override void Dispose(bool disposing) { }
 		public override MemoryHandle Pin(int elementIndex = 0)
+			=> throw new NotImplementedException();
+		public override void Unpin()
+			=> throw new NotImplementedException();
+	}
+
+	public sealed class CastMemoryManager64<TFrom, TTo> : MemoryManager64<TTo>
+		where TFrom : unmanaged
+		where TTo : unmanaged
+	{
+		private readonly Memory64<TFrom> _from;
+
+		public CastMemoryManager64(Memory64<TFrom> from) => _from = from;
+
+		public override Span64<TTo> GetSpan()
+			=> MemoryMarshal64.Cast<TFrom, TTo>(_from.Span);
+
+		protected override void Dispose(bool disposing) { }
+		public override MemoryHandle Pin(long elementIndex = 0)
 			=> throw new NotImplementedException();
 		public override void Unpin()
 			=> throw new NotImplementedException();
