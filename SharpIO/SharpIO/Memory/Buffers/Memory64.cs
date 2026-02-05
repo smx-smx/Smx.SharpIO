@@ -13,11 +13,18 @@ using System.Runtime.InteropServices;
 
 namespace Smx.SharpIO.Memory.Buffers;
 
-public readonly struct Memory64<T> : IEquatable<Memory64<T>>
+public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
 {
     private readonly object? _object;
     private readonly long _indexOrPointer;
     private readonly long _length;
+
+	public static unsafe implicit operator Memory64<T>(Memory<T> value) {
+		var handle = value.Pin();
+		var dptr = handle.Pointer;
+		var length = value.Length;
+		return new Memory64<T>(handle, (long)dptr, length);
+	}
 
     public static implicit operator Memory<T>(Memory64<T> value)
     {
@@ -101,7 +108,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
     public unsafe Span64<T> Span {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get {
-            if (_object == null) {
+            if (_object == null || _object is MemoryHandle) {
                 return new Span64<T>((void*)_indexOrPointer, _length);
             } else if (_object is T[] array) {
                 return new Span64<T>(array).Slice(_indexOrPointer, _length);
@@ -110,7 +117,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
                 return new Span64<T>(ref MemoryMarshal64.GetReference(span), span.Length)
                        .Slice(_indexOrPointer, _length);
             }
-            throw new InvalidOperationException();
+			throw new InvalidOperationException();
         }
     }
 
@@ -119,7 +126,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
 
         long newLength = _length - start;
 
-        if (_object == null) {
+        if (_object == null || _object is MemoryHandle) {
             // Native: Advance pointer
             long offsetBytes = start * Unsafe.SizeOf<T>();
             return new Memory64<T>(_object, _indexOrPointer + offsetBytes, newLength);
@@ -135,7 +142,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
             ThrowHelper.ThrowArgumentOutOfRangeException();
         }
 
-        if (_object == null) {
+        if (_object == null || _object is MemoryHandle) {
             long offsetBytes = start * Unsafe.SizeOf<T>();
             return new Memory64<T>(_object, _indexOrPointer + offsetBytes, length);
         } else {
@@ -181,4 +188,10 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>
             return new MemoryHandle((void*)_indexOrPointer);
         }
     }
+
+	public void Dispose() {
+		if(_object is MemoryHandle handle) {
+			handle.Dispose();
+		}
+	}
 }

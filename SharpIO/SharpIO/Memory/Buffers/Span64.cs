@@ -7,6 +7,7 @@
  */
 #endregion
 
+using Smx.SharpIO.Extensions;
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -21,7 +22,23 @@ public readonly ref struct Span64<T>
     public long Length => _length;
     public bool IsEmpty => _length == 0;
 
-    public static implicit operator Span<T>(Span64<T> span64) {
+	public static implicit operator ReadOnlySpan64<T>(Span64<T> span64) {
+		return MemoryMarshal64.CreateReadOnlySpan(ref span64._reference, span64.Length);
+	}
+
+	public static implicit operator Span64<T>(Span<T> span) {
+		ref var dref = ref MemoryMarshal.GetReference(span);
+		return MemoryMarshal64.CreateSpan(ref dref, span.Length);
+	}
+
+	public static implicit operator ReadOnlySpan<T>(Span64<T> span64) {
+		if (span64._length > int.MaxValue) {
+			throw new OverflowException("Span64 length exceeds the 32-bit limit of Span<T>.");
+		}
+		return MemoryMarshal.CreateReadOnlySpan(ref span64._reference, (int)span64._length);
+	}
+
+	public static implicit operator Span<T>(Span64<T> span64) {
         if (span64._length > int.MaxValue)
         {
             throw new OverflowException("Span64 length exceeds the 32-bit limit of Span<T>.");
@@ -112,10 +129,6 @@ public readonly ref struct Span64<T>
             Buffer.MemoryCopy(srcPtr, dstPtr, destByteCount, byteCount);
         }
     }
-
-    // Implicit cast to ReadOnly
-    public static implicit operator ReadOnlySpan64<T>(Span64<T> span)
-        => new ReadOnlySpan64<T>(ref span._reference, span._length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ref T GetPinnableReference() => ref _reference;

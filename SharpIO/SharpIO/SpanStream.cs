@@ -497,6 +497,12 @@ namespace Smx.SharpIO
 			pos += data.Length;
 		}
 
+		public sbyte ReadSbyte() => Read<sbyte>();
+		public void WriteSByte(sbyte value) => Write(value);
+
+		public new byte ReadByte() => Read<byte>();
+		public new void WriteByte(byte value) => Write(value);
+
 		public short ReadInt16() => (short)u16Reader();
 		public void WriteInt16(Int16 value) => u16Writer((ushort)value);
 

@@ -20,6 +20,11 @@ public readonly ref struct ReadOnlySpan64<T>
     public long Length => _length;
     public bool IsEmpty => _length == 0;
 
+	public static implicit operator ReadOnlySpan64<T>(ReadOnlySpan<T> span) {
+		ref var dref = ref MemoryMarshal.GetReference(span);
+		return MemoryMarshal64.CreateReadOnlySpan(ref dref, span.Length);
+	}
+
     public static implicit operator ReadOnlySpan<T>(ReadOnlySpan64<T> span64) {
         if (span64._length > int.MaxValue)
         {
