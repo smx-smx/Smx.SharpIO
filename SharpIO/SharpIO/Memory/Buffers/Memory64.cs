@@ -45,7 +45,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
         }
 
         // Case 3: Native Pointers (void*)
-        if (value._object == null)
+        if (value._object == null || value._object is MemoryHandle)
         {
 			var mgr = new UnmanagedMemoryManager<T>(new nint(value._indexOrPointer), (int)value._length);
             return mgr.Memory;
