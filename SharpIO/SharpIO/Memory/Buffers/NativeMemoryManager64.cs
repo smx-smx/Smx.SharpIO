@@ -52,7 +52,7 @@ public sealed class NativeMemoryManager64<T> : MemoryManager64<T>
         _onDispose = onDispose;
     }
 
-    public override unsafe Span64<T> GetSpan() {
+	public override unsafe Span64<T> GetSpan() {
         if (_disposed) throw new ObjectDisposedException(nameof(NativeMemoryManager64<T>));
         return new Span64<T>(_pointer, _length);
     }

@@ -25,8 +25,8 @@ namespace Smx.SharpIO.Tests
             var source64 = new Memory64<int>([1, 2, 3]);
             var dest64 = new Memory64<int>(new int[3]);
 
-            Memory<int> source = source64;
-            Memory<int> dest = dest64;
+            Memory<int> source = (Memory<int>)source64;
+            Memory<int> dest = (Memory<int>)dest64;
             
             source.CopyTo(dest);
             Assert.AreEqual(1, dest.Span[0]);
@@ -39,7 +39,7 @@ namespace Smx.SharpIO.Tests
         public void ImplicitConversion_SameReference()
         {
             var source64 = new Memory64<int>([1, 2, 3]);
-            Memory<int> source = source64;
+            Memory<int> source = (Memory<int>)source64;
 
 			source.Span[0] = 4;
 			source.Span[1] = 5;

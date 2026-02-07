@@ -19,7 +19,7 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
     internal readonly long _indexOrPointer;
     internal readonly long _length;
 
-    public static implicit operator ReadOnlyMemory<T>(ReadOnlyMemory64<T> value)
+    public static explicit operator ReadOnlyMemory<T>(ReadOnlyMemory64<T> value)
     {
         // Standard Memory<T> is limited to int.MaxValue
         if ((ulong)value._length > int.MaxValue)
@@ -34,10 +34,16 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
         }
 
         // Case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
-        if (value._object is MemoryManager<T> manager)
+        if (value._object is IMemoryOwner64<T> manager)
         {
-            return manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
-        }
+			var sliced = manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+			var handle = sliced.Pin();
+			UnmanagedMemoryManager<T> mem;
+			unsafe {
+				mem = new UnmanagedMemoryManager<T>(new nint(handle.Pointer), (int)value._length, handle);
+			}
+			return mem.Memory;
+		}
 
         // Case 3: Native Pointers (void*)
         if (value._object == null)
@@ -46,8 +52,8 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
             return mgr.Memory;
         }
 
-        return default;
-    }
+		throw new InvalidCastException($"Invalid object type: {value._object.GetType().ToString()}");
+	}
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlyMemory64<T>(T[]? array) {

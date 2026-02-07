@@ -16,12 +16,14 @@ internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T>
 {
 	private readonly nint _pointer;
     private readonly int _length;
+	private readonly MemoryHandle? _handle;
 
 
-    public UnmanagedMemoryManager(nint pointer, int length)
+    public UnmanagedMemoryManager(nint pointer, int length, MemoryHandle? handle = null)
     {
         _pointer = pointer;
         _length = length;
+		_handle = handle;
     }
 
     public override Span<T> GetSpan() => new Span<T>(_pointer.ToPointer(), _length);
@@ -32,5 +34,7 @@ internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T>
 
     public override void Unpin() { /* No-op for unmanaged memory */ }
 
-    protected override void Dispose(bool disposing) {}
+    protected override void Dispose(bool disposing) {
+		_handle?.Dispose();
+	}
 }

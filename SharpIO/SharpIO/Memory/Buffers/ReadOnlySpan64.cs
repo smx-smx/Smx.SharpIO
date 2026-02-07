@@ -25,7 +25,7 @@ public readonly ref struct ReadOnlySpan64<T>
 		return MemoryMarshal64.CreateReadOnlySpan(ref dref, span.Length);
 	}
 
-    public static implicit operator ReadOnlySpan<T>(ReadOnlySpan64<T> span64) {
+    public static explicit operator ReadOnlySpan<T>(ReadOnlySpan64<T> span64) {
         if (span64._length > int.MaxValue)
         {
             throw new OverflowException("Span64 length exceeds the 32-bit limit of Span<T>.");
@@ -168,4 +168,44 @@ public readonly ref struct ReadOnlySpan64<T>
             get => ref _span[_index];
         }
     }
+
+	public ChunkEnumerator GetChunks() => new ChunkEnumerator(this);
+
+
+	// Must be a ref struct because it holds a Span<T>
+	public ref struct ChunkEnumerator
+	{
+		private readonly ReadOnlySpan64<T> _source;
+		private long _position;
+		private ReadOnlySpan<T> _current;
+
+		internal ChunkEnumerator(ReadOnlySpan64<T> source) {
+			_source = source;
+			_position = 0;
+			_current = default;
+		}
+
+		public readonly ReadOnlySpan<T> Current => _current;
+
+		public bool MoveNext() {
+			if (_position >= _source.Length) {
+				return false;
+			}
+
+			long remaining = _source.Length - _position;
+
+			// Cap the size at int.MaxValue (standard Span limit)
+			int currentChunkSize = (remaining > int.MaxValue)
+				? int.MaxValue
+				: (int)remaining;
+
+			var slice64 = _source.Slice(_position, currentChunkSize);
+			_current = (ReadOnlySpan<T>)slice64;
+
+			_position += currentChunkSize;
+			return true;
+		}
+
+		public readonly ChunkEnumerator GetEnumerator() => this;
+	}
 }

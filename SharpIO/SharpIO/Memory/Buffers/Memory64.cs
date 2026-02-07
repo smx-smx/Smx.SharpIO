@@ -6,8 +6,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #endregion
+using Smx.SharpIO.Extensions;
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -26,7 +28,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
 		return new Memory64<T>(handle, (long)dptr, length);
 	}
 
-    public static implicit operator Memory<T>(Memory64<T> value)
+    public static explicit operator Memory<T>(Memory64<T> value)
     {
         // Standard Memory<T> is limited to int.MaxValue
         if ((ulong)value._length > int.MaxValue)
@@ -39,9 +41,15 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
             return new Memory<T>(array, (int)value._indexOrPointer, (int)value._length);
         }
 
-		if (value._object is MemoryManager64<T> manager)
+		if (value._object is IMemoryOwner64<T> manager)
         {
-            return manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+            var sliced = manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+			var handle = sliced.Pin();
+			UnmanagedMemoryManager<T> mem;
+			unsafe {
+				mem = new UnmanagedMemoryManager<T>(new nint(handle.Pointer), (int)value._length, handle);
+			}
+			return mem.Memory;
         }
 
         // Case 3: Native Pointers (void*)
@@ -51,7 +59,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
             return mgr.Memory;
         }
 
-        return default;
+		throw new InvalidCastException($"Invalid object type: {value._object.GetType().ToString()}");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,7 +80,10 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
     }
 
     public Memory64(T[]? array) {
-        if (array == null) throw new ArgumentNullException(nameof(array));
+        if (array == null) {
+			this = default;
+			return;
+		}
         _object = array;
         _indexOrPointer = 0;
         _length = array.LongLength;
@@ -192,6 +203,26 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
 	public void Dispose() {
 		if(_object is MemoryHandle handle) {
 			handle.Dispose();
+		}
+	}
+
+	public IEnumerable<Memory<T>> GetChunks() {
+		const int MaxChunkSize = int.MaxValue;
+
+		long position = 0;
+
+		while (position < _length) {
+			long remaining = _length - position;
+
+			// determine the size of the current chunk
+			int currentChunkSize = (remaining > MaxChunkSize)
+				? MaxChunkSize
+				: (int)remaining;
+
+			Memory64<T> slice64 = Slice(position, currentChunkSize);
+			yield return (Memory<T>)slice64;
+
+			position += currentChunkSize;
 		}
 	}
 }
