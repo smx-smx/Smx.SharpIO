@@ -86,13 +86,13 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
             if (_object is T[] array)
                 return new ReadOnlySpan64<T>(array).Slice(_indexOrPointer, _length);
 
-            if (_object is MemoryManager<T> manager) {
-                Span<T> span = manager.GetSpan();
-                return new ReadOnlySpan64<T>(ref MemoryMarshal.GetReference(span), span.Length)
+            if (_object is MemoryManager64<T> manager) {
+                Span64<T> span = manager.GetSpan();
+                return new ReadOnlySpan64<T>(ref MemoryMarshal64.GetReference(span), span.Length)
                        .Slice(_indexOrPointer, _length);
             }
-            return default;
-        }
+			throw new InvalidOperationException($"Invalid object type: {_object.GetType().ToString()}");
+		}
     }
 
     public ReadOnlyMemory64<T> Slice(long start) {

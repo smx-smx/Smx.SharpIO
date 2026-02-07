@@ -128,8 +128,8 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
                 return new Span64<T>(ref MemoryMarshal64.GetReference(span), span.Length)
                        .Slice(_indexOrPointer, _length);
             }
-			throw new InvalidOperationException();
-        }
+			throw new InvalidOperationException($"Invalid object type: {_object.GetType().ToString()}");
+		}
     }
 
     public Memory64<T> Slice(long start) {
