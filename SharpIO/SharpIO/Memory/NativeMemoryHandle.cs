@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Smx.SharpIO.Extensions;
+using Smx.SharpIO.Memory.Buffers;
 using static Smx.SharpIO.Memory.MemoryAllocator;
 
 namespace Smx.SharpIO.Memory
@@ -25,7 +26,7 @@ namespace Smx.SharpIO.Memory
 		Custom = 2
 	}
 
-	public class NativeMemoryHandle : MemoryManager<byte>, IDisposable
+	public class NativeMemoryHandle : MemoryManager64<byte>, IDisposable
 	{
 		private nint handle;
 		private nuint size;
@@ -40,22 +41,17 @@ namespace Smx.SharpIO.Memory
 			this.alloctator = allocator;
 		}
 
-		public void Dispose() {
-			Dispose(true);
-			GC.SuppressFinalize(this);
-		}
-
-		public Span<T> AsSpan<T>(int byteOffset = 0) where T : unmanaged {
+		public Span64<T> AsSpan<T>(int byteOffset = 0) where T : unmanaged {
 			return Span.Slice(byteOffset)
 				.Cast<T>();
 		}
 
-		public Span<T> AsSpan<T>(int byteOffset, int count) where T : unmanaged {
+		public Span64<T> AsSpan<T>(int byteOffset, int count) where T : unmanaged {
 			return Span.Slice(byteOffset, Unsafe.SizeOf<T>() * count)
 				.Cast<T>();
 		}
 
-		public Span<byte> Span => GetSpan();
+		public Span64<byte> Span => GetSpan();
 
 		public nint Address => handle;
 		public nuint Size => size;
@@ -86,14 +82,14 @@ namespace Smx.SharpIO.Memory
 			disposed = true;
 		}
 
-		public override Span<byte> GetSpan() {
+		public override Span64<byte> GetSpan() {
 			unsafe {
-				return new Span<byte>(handle.ToPointer(), (int)Size);
+				return new Span64<byte>(handle.ToPointer(), (int)Size);
 			}
 		}
 
-		public override MemoryHandle Pin(int elementIndex = 0) {
-			if (elementIndex < 0 || elementIndex >= (int)Size) {
+		public override MemoryHandle Pin(long elementIndex = 0) {
+			if (elementIndex < 0 || elementIndex >= (long)Size) {
 				throw new ArgumentOutOfRangeException(nameof(elementIndex));
 			}
 			unsafe {

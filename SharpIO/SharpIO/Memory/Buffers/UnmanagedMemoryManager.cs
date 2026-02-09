@@ -12,23 +12,23 @@ using System.Runtime.CompilerServices;
 
 namespace Smx.SharpIO.Memory.Buffers;
 
-internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T>
+internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager64<T>
 {
 	private readonly nint _pointer;
-    private readonly int _length;
+    private readonly long _length;
 	private readonly MemoryHandle? _handle;
 
 
-    public UnmanagedMemoryManager(nint pointer, int length, MemoryHandle? handle = null)
+    public UnmanagedMemoryManager(nint pointer, long length, MemoryHandle? handle = null)
     {
         _pointer = pointer;
         _length = length;
 		_handle = handle;
     }
 
-    public override Span<T> GetSpan() => new Span<T>(_pointer.ToPointer(), _length);
+    public override Span64<T> GetSpan() => new Span64<T>(_pointer.ToPointer(), _length);
 
-    public override MemoryHandle Pin(int elementIndex = 0) {
+    public override MemoryHandle Pin(long elementIndex = 0) {
 		return new MemoryHandle((void *)(_pointer + (Unsafe.SizeOf<T>() * elementIndex)));
 	} 
 

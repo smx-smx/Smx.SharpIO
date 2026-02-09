@@ -30,7 +30,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
 
     public static explicit operator Memory<T>(Memory64<T> value)
     {
-        // Standard Memory<T> is limited to int.MaxValue
+        // standard Memory<T> is limited to int.MaxValue
         if ((ulong)value._length > int.MaxValue)
         {
             ThrowHelper.ThrowArgumentOutOfRangeException();
@@ -43,20 +43,20 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
 
 		if (value._object is IMemoryOwner64<T> manager)
         {
-            var sliced = manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
+            var sliced = manager.Memory.Slice(value._indexOrPointer, value._length);
 			var handle = sliced.Pin();
 			UnmanagedMemoryManager<T> mem;
 			unsafe {
 				mem = new UnmanagedMemoryManager<T>(new nint(handle.Pointer), (int)value._length, handle);
 			}
-			return mem.Memory;
+			return (Memory<T>)mem.Memory;
         }
 
-        // Case 3: Native Pointers (void*)
+        // case 3: Native Pointers (void*)
         if (value._object == null || value._object is MemoryHandle)
         {
 			var mgr = new UnmanagedMemoryManager<T>(new nint(value._indexOrPointer), (int)value._length);
-            return mgr.Memory;
+            return (Memory<T>)mgr.Memory;
         }
 
 		throw new InvalidCastException($"Invalid object type: {value._object.GetType().ToString()}");
@@ -106,7 +106,7 @@ public readonly struct Memory64<T> : IEquatable<Memory64<T>>, IDisposable
         _length = actualLength;
     }
 
-    // Internal Constructor for Slice (Trusted inputs)
+    // internal Constructor for Slice (Trusted inputs)
     internal Memory64(object? obj, long indexOrPtr, long length) {
         _object = obj;
         _indexOrPointer = indexOrPtr;

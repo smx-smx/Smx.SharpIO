@@ -38,7 +38,7 @@ namespace Smx.SharpIO
 				fs, null, 0,
 				mmapFlags, HandleInheritability.Inheritable, true
 			);
-			this.Span = new MemoryMappedSpan<byte>(mmf, (int)fs.Length, mmapFlags);
+			this.Span = new MemoryMappedSpan<byte>(mmf, fs.Length, mmapFlags);
 		}
 
 		public MFile(FileStream fs) {

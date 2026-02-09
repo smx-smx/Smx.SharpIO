@@ -16,13 +16,13 @@ namespace Smx.SharpIO
 {
 	public unsafe class MemoryMappedSpan<T> : MemoryManager64<T>, IDisposable where T : unmanaged
 	{
-		public readonly int Length;
+		public readonly long Length;
 
 		private readonly MemoryMappedViewAccessor acc;
 		private readonly byte* dptr = null;
 		private bool disposed = false;
 
-		public MemoryMappedSpan(MemoryMappedFile mf, int length, MemoryMappedFileAccess mmapFlags) {
+		public MemoryMappedSpan(MemoryMappedFile mf, long length, MemoryMappedFileAccess mmapFlags) {
 			this.Length = length;
 			this.acc = mf.CreateViewAccessor(0, length, mmapFlags);
 			this.acc.SafeMemoryMappedViewHandle.AcquirePointer(ref dptr);

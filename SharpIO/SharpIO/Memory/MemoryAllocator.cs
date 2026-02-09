@@ -7,8 +7,8 @@
  */
 #endregion
 using Smx.SharpIO.Extensions;
+using Smx.SharpIO.Memory.Buffers;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -36,7 +36,7 @@ namespace Smx.SharpIO.Memory
 
 		public NativeMemoryHandle Alloc(nuint size, bool owned = true) {
 			var mem = MemoryManager.Alloc(size);
-			mem.AsSpan<byte>((int)size).Clear();
+			mem.AsSpan<byte>((long)size).Clear();
 			return new NativeMemoryHandle(mem, size, MemoryManager, owned: owned);
 		}
 

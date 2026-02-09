@@ -37,7 +37,7 @@ namespace Smx.SharpIO
 
 		public override long Position {
 			get => pos;
-			set => pos = (int)value;
+			set => pos = value;
 		}
 
 		public void Mark() {
@@ -84,14 +84,14 @@ namespace Smx.SharpIO
 			}
 		}
 
-		public string ReadString(int length, Encoding? encoding = null) {
+		public string ReadString(long length, Encoding? encoding = null) {
 			if(encoding == null) {
 				encoding = Encoding.ASCII;
 			}
 			byte[] bytes = ReadBytes(length);
 			return encoding.GetString(bytes);
 		}
-		public byte[] ReadBytes(int count) {
+		public byte[] ReadBytes(long count) {
 			byte[] ret = Memory.Slice(pos, count).ToArray();
 			pos += count;
 			return ret;
@@ -274,8 +274,12 @@ namespace Smx.SharpIO
 		}
 
 		public override int Read(byte[] buffer, int offset, int count) {
+			return (int)Read(buffer, (long)offset, (long)count);
+		}
+
+		public long Read(byte[] buffer, long offset, long count) {
 			Memory.Span
-				.Slice((int)Position, count)
+				.Slice(Position, count)
 				.ToArray()
 				.CopyTo(buffer, offset);
 			pos += count;
@@ -289,7 +293,7 @@ namespace Smx.SharpIO
 		}
 
 		public unsafe void WriteAt<T>(long offset, T value) where T : unmanaged {
-			Memory.Span.Write<T>((int)offset, value);
+			Memory.Span.Write(offset, value);
 		}
 
 		public void WriteMemory<T>(Memory64<T> data) where T : unmanaged {
@@ -398,11 +402,11 @@ namespace Smx.SharpIO
 		}
 
 		public string ReadCString(Encoding encoding) {
-			int start = (int)Position;
-			while (Span[(int)(Position++)] != 0x00) ;
+			var start = Position;
+			while (Span[Position++] != 0x00) ;
 
 			// ignore trailing NULL
-			byte[] data = Span.Slice(start, (int)(Position - start - 1)).ToArray();
+			byte[] data = Span.Slice(start, Position - start - 1).ToArray();
 			return encoding.GetString(data);
 		}
 
@@ -430,11 +434,11 @@ namespace Smx.SharpIO
 
 			return (T)value;
 		}
-		public int AlignStream(uint alignment) {
+		public long AlignStream(uint alignment) {
 			long position = (Position + alignment - 1) & ~(alignment - 1);
 			long skipped = position - Position;
 			Position = position;
-			return (int)skipped;
+			return skipped;
 		}
 
 		public void PerformAt(long offset, Action action) {
@@ -474,7 +478,7 @@ namespace Smx.SharpIO
 			return Position;
 		}
 
-		public SpanStream Slice(int start, int length) {
+		public SpanStream Slice(long start, long length) {
 			return new SpanStream(this.Memory.Slice(start, length), endianness);
 		}
 
@@ -482,19 +486,19 @@ namespace Smx.SharpIO
 			return new SpanStream(this.Memory.Slice(this.pos), this.endianness);
 		}
 
-		public SpanStream SliceHere(int length) {
+		public SpanStream SliceHere(long length) {
 			return new SpanStream(this.Memory.Slice(this.pos, length), this.endianness);
 		}
 
 		public virtual byte[] ReadRemaining() {
-			return ReadBytes((int)Remaining);
+			return ReadBytes(Remaining);
 		}
 
 		public void WriteBytes(byte[] data) {
-			var start = Memory.Span.Slice(pos, data.Length);
+			var start = Memory.Span.Slice(pos, data.LongLength);
 			var dspan = new Span64<byte>(data);
 			dspan.CopyTo(start);
-			pos += data.Length;
+			pos += data.LongLength;
 		}
 
 		public sbyte ReadSbyte() => Read<sbyte>();
@@ -535,8 +539,12 @@ namespace Smx.SharpIO
 		}
 
 		public override void Write(byte[] buffer, int offset, int count) {
+			Write(buffer, (long)offset, (long)count);
+		}
+
+		public void Write(byte[] buffer, long offset, long count) {
 			Span64<byte> source = ((Span64<byte>)buffer).Slice(offset, count);
-			Span64<byte> dest = Memory.Span.Slice((int)Position, count);
+			Span64<byte> dest = Memory.Span.Slice(Position, count);
 			source.CopyTo(dest);
 			Position += count;
 		}

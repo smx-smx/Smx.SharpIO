@@ -21,19 +21,19 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
 
     public static explicit operator ReadOnlyMemory<T>(ReadOnlyMemory64<T> value)
     {
-        // Standard Memory<T> is limited to int.MaxValue
+        // standard Memory<T> is limited to int.MaxValue
         if ((ulong)value._length > int.MaxValue)
         {
             ThrowHelper.ThrowArgumentOutOfRangeException();
         }
 
-        // Case 1: Managed Array
+        // case 1: Managed Array
         if (value._object is T[] array)
         {
             return new ReadOnlyMemory<T>(array, (int)value._indexOrPointer, (int)value._length);
         }
 
-        // Case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
+        // case 2: MemoryManager (e.g. NativeMemoryManager, RecyclableMemoryStream)
         if (value._object is IMemoryOwner64<T> manager)
         {
 			var sliced = manager.Memory.Slice((int)value._indexOrPointer, (int)value._length);
@@ -42,14 +42,14 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
 			unsafe {
 				mem = new UnmanagedMemoryManager<T>(new nint(handle.Pointer), (int)value._length, handle);
 			}
-			return mem.Memory;
+			return (ReadOnlyMemory<T>)(ReadOnlyMemory64<T>)mem.Memory;
 		}
 
-        // Case 3: Native Pointers (void*)
+        // case 3: Native Pointers (void*)
         if (value._object == null)
         {
 			var mgr = new UnmanagedMemoryManager<T>(new nint(value._indexOrPointer), (int)value._length);
-            return mgr.Memory;
+            return (ReadOnlyMemory<T>)(ReadOnlyMemory64<T>)mgr.Memory;
         }
 
 		throw new InvalidCastException($"Invalid object type: {value._object.GetType().ToString()}");
@@ -65,8 +65,6 @@ public readonly struct ReadOnlyMemory64<T> : IEquatable<ReadOnlyMemory64<T>>
     public static implicit operator ReadOnlyMemory64<T>(ArraySegment<T> segment) {
         return new Memory64<T>(segment.Array).Slice(segment.Offset, segment.Count);
     }
-
-    // Constructors mirror Memory64 (omitted for brevity, assume same logic)
 
     internal ReadOnlyMemory64(object? obj, long indexOrPtr, long length) {
         _object = obj;

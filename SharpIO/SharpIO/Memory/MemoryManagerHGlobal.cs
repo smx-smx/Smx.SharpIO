@@ -16,7 +16,7 @@ namespace Smx.SharpIO.Memory
 	public class MemoryManagerHGlobal : IMemoryManager
 	{
 		public nint Alloc(nuint size) {
-			return Marshal.AllocHGlobal((int)size);
+			return Marshal.AllocHGlobal((nint)size);
 		}
 
 		public void Free(nint ptr) {

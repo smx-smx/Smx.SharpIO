@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Smx.SharpIO.Extensions;
+using Smx.SharpIO.Memory.Buffers;
 
 namespace Smx.SharpIO.Memory
 {
@@ -24,16 +25,16 @@ namespace Smx.SharpIO.Memory
 			}
 		}
 
-		public Span<T> AsSpan(int numElements){
+		public Span64<T> AsSpan(long numElements){
 			return Address.AsSpan<T>(numElements);
 		}
 
-		public static TypedPointer<T> operator +(TypedPointer<T> ptr, int n) {
-			return new TypedPointer<T>(ptr.Address + (Unsafe.SizeOf<T>() * n));
+		public static TypedPointer<T> operator +(TypedPointer<T> ptr, long n) {
+			return new TypedPointer<T>(ptr.Address + (Unsafe.SizeOf<T>() * new nint(n)));
 		}
 
-		public static TypedPointer<T> operator -(TypedPointer<T> ptr, int n) {
-			return new TypedPointer<T>(ptr.Address - (Unsafe.SizeOf<T>() * n));
+		public static TypedPointer<T> operator -(TypedPointer<T> ptr, long n) {
+			return new TypedPointer<T>(ptr.Address - (Unsafe.SizeOf<T>() * new nint(n)));
 		}
 
 		public static TypedPointer<T> operator ++(TypedPointer<T> ptr) {

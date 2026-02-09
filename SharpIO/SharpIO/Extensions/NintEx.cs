@@ -6,6 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #endregion
+using Smx.SharpIO.Memory.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -23,6 +24,14 @@ namespace Smx.SharpIO.Extensions
 			Span<T> span;
 			unsafe {
 				span = new Span<T>(ptr.ToPointer(), numElements);
+			}
+			return span;
+		}
+
+		public static Span64<T> AsSpan<T>(this nint ptr, long numElements) {
+			Span64<T> span;
+			unsafe {
+				span = new Span64<T> (ptr.ToPointer(), numElements);
 			}
 			return span;
 		}

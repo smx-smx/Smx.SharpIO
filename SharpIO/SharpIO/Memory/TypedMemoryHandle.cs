@@ -7,6 +7,7 @@
  */
 #endregion
 using Smx.SharpIO.Extensions;
+using Smx.SharpIO.Memory.Buffers;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -32,7 +33,7 @@ namespace Smx.SharpIO.Memory
 			}
 		}
 
-		public Span<T> Span => Memory.AsSpan<T>(0);
+		public Span64<T> Span => Memory.AsSpan<T>(0);
 
 		public nint Address => Pointer.Address;
 
