@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Smx.SharpIO.Extensions;
@@ -150,18 +151,28 @@ namespace Smx.SharpIO
 			);
 		}
 
-
 		private int FieldSize(FieldInfo field) {
-			if (field.FieldType.IsArray) {
-				var attr = field.GetCustomAttribute<MarshalAsAttribute>();
-				if(attr == null) {
-					throw new InvalidOperationException("Missing [MarshalAs] attribute");
+			InlineArrayAttribute? inlineArray = null;
+			if (field.FieldType.IsArray || (inlineArray = field.FieldType.GetCustomAttribute<InlineArrayAttribute>()) != null) {
+				if (inlineArray != null) {
+					var elementType = field.FieldType
+						.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+						.FirstOrDefault()?.FieldType;
+					if(elementType == null) {
+						throw new InvalidOperationException("InlineArray is empty");
+					}
+					return Marshal.SizeOf(elementType) * inlineArray.Length;
+				} else {
+					var attr = field.GetCustomAttribute<MarshalAsAttribute>();
+					if (attr == null) {
+						throw new InvalidOperationException("Missing [MarshalAs] attribute");
+					}
+					var t = field.FieldType.GetElementType();
+					if (t == null) {
+						throw new InvalidOperationException("Cannot get array element type");
+					}
+					return Marshal.SizeOf(t) * attr.SizeConst;
 				}
-				var t = field.FieldType.GetElementType();
-				if(t == null) {
-					throw new InvalidOperationException("Cannot get array element type");
-				}
-				return Marshal.SizeOf(t) * attr.SizeConst;
 			} else {
 				if (field.FieldType.IsEnum) {
 					return Marshal.SizeOf(Enum.GetUnderlyingType(field.FieldType));
@@ -173,18 +184,36 @@ namespace Smx.SharpIO
 		private void SwapEndian<T>(byte[] data, FieldInfo field) {
 			var type = typeof(T);
 			int offset = Marshal.OffsetOf(type, field.Name).ToInt32();
-			if (field.FieldType.IsArray) {
-				var attr = field.GetCustomAttribute<MarshalAsAttribute>();
-				if(attr == null) {
-					throw new InvalidOperationException("Missing [MarshalAs] attribute");
-				}
-				var t = field.FieldType.GetElementType();
-				if(t == null) {
-					throw new InvalidOperationException("Cannot get field type");
-				}
-				int subSize = Marshal.SizeOf(t);
-				for (int i = 0; i < attr.SizeConst; i++) {
-					Array.Reverse(data, offset + (i * subSize), subSize);
+			InlineArrayAttribute? inlineArray = null;
+			if (field.FieldType.IsArray || (inlineArray = field.FieldType.GetCustomAttribute<InlineArrayAttribute>()) != null) {
+				if (inlineArray != null) {
+					var elementType = field.FieldType
+						.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+						.FirstOrDefault()?.FieldType;
+					if (elementType == null) {
+						throw new InvalidOperationException("InlineArray is empty");
+					}
+					var subSize = Marshal.SizeOf(elementType);
+					if (subSize > 1) {
+						for (int i = 0; i < inlineArray.Length; i++) {
+							Array.Reverse(data, offset + (i * subSize), subSize);
+						}
+					}
+				} else {
+					var attr = field.GetCustomAttribute<MarshalAsAttribute>();
+					if (attr == null) {
+						throw new InvalidOperationException("Missing [MarshalAs] attribute");
+					}
+					var t = field.FieldType.GetElementType();
+					if (t == null) {
+						throw new InvalidOperationException("Cannot get field type");
+					}
+					var subSize = Marshal.SizeOf(t);
+					if (subSize > 1) {
+						for (int i = 0; i < attr.SizeConst; i++) {
+							Array.Reverse(data, offset + (i * subSize), subSize);
+						}
+					}
 				}
 			} else {
 				Array.Reverse(data, offset, FieldSize(field));
@@ -212,7 +241,7 @@ namespace Smx.SharpIO
 				Marshal.StructureToPtr(data, mem, false);
 				var bytes = new byte[sz];
 				Marshal.Copy(mem, bytes, 0, sz);
-				foreach (var field in type.GetFields()) {
+				foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)) {
 					if (field.IsDefined(typeof(EndianAttribute), false)) {
 						Endianness fieldEndianess = ((EndianAttribute)field.GetCustomAttributes(typeof(EndianAttribute), false)[0]).Endianness;
 						if (
