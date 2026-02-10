@@ -4,9 +4,16 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SharpIO.Tests;
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct PackedStruct {
+	public byte v0;
+	public ushort v1;
+}
 
 [InlineArray(4)]
 public struct TestInlineArray {
@@ -317,4 +324,15 @@ public class SpanStreamTests
 		Assert.AreEqual(0, st2.Position);
 		Assert.AreEqual(3, st2.ReadByte());
 	}
+
+
+	[Test]
+	public void TestPackedStruct() {
+		var buf = new byte[] { 0xFF, 0xAA, 0xBB };
+		var st = new SpanStream(buf);
+		var data = st.ReadStruct<PackedStruct>();
+		Assert.AreEqual(0xFF, data.v0);
+		Assert.AreEqual(0xBBAA, data.v1);
+	}
 }
+
