@@ -24,6 +24,10 @@ public struct TestCrashStruct {
 	public uint Bar;
 }
 
+public struct UShortStruct {
+	public ushort Value;
+}
+
 public class SpanStreamTests
 {
 	[SetUp]
@@ -51,5 +55,13 @@ public class SpanStreamTests
 		var data = st.ReadStruct<TestCrashStruct>();
 		Assert.AreEqual(0xDEADBEEF, data.Foo);
 		Assert.AreEqual(0xA0B0C0D0, data.Bar);
+	}
+
+	[Test]
+	public void TestBigEndianStruct_WithUShort() {
+		var buf = new byte[] { 0x00, 0x01 };
+		var st = new SpanStream(buf, Endianness.BigEndian);
+		var data = st.ReadStruct<UShortStruct>();
+		Assert.AreEqual(0x1, data.Value);
 	}
 }

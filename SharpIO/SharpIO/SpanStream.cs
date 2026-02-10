@@ -220,11 +220,9 @@ namespace Smx.SharpIO
 			}
 		}
 
-		private Endianness defaultEndianess = Endianness.LittleEndian;
-
 		/* Adapted from http://stackoverflow.com/a/2624377 */
 		private T? RespectEndianness<T>(T data) where T : notnull {
-			var structEndianness = this.defaultEndianess;
+			var structEndianness = endianness;
 			var type = typeof(T);
 			if (type.IsDefined(typeof(EndianAttribute), false)) {
 				var attr = type.GetCustomAttribute<EndianAttribute>();
