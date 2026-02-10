@@ -344,8 +344,8 @@ namespace Smx.SharpIO
 			}
 
 			if (lengthPrefix) {
-				int maxLength = 2 << ((8 * prefixLength) - 1);
-				if(str.Length > maxLength) {
+				long maxLength = 1L << (8 * prefixLength);
+				if (str.Length > maxLength) {
 					throw new ArgumentException("Prefix length is too short");
 				}
 				switch (prefixLength) {
