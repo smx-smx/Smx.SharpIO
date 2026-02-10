@@ -236,4 +236,85 @@ public class SpanStreamTests
 		Assert.AreEqual(4, st.Position);
 		Assert.AreEqual(0, skipped);
 	}
+
+	[Test]
+	public void TestBulkReadWrite() {
+		var buf = new byte[10];
+		for(int i=0; i<10; i++) buf[i] = (byte)i;
+		
+		var st = new SpanStream(buf);
+		
+		// ReadBytes
+		byte[] first3 = st.ReadBytes(3);
+		Assert.AreEqual(3, first3.Length);
+		Assert.AreEqual(0, first3[0]);
+		Assert.AreEqual(2, first3[2]);
+		Assert.AreEqual(3, st.Position);
+		
+		// ReadRemaining
+		byte[] rest = st.ReadRemaining();
+		Assert.AreEqual(7, rest.Length);
+		Assert.AreEqual(3, rest[0]);
+		Assert.AreEqual(9, rest[6]);
+		Assert.AreEqual(10, st.Position);
+		
+		// Bulk Read into buffer
+		st.Position = 0;
+		byte[] target = new byte[5];
+		long read = st.Read(target, 0, 5);
+		Assert.AreEqual(5, read);
+		Assert.AreEqual(0, target[0]);
+		Assert.AreEqual(4, target[4]);
+	}
+
+	[Test]
+	public void TestBulkWrite() {
+		var buf = new byte[10];
+		var st = new SpanStream(buf);
+		
+		byte[] data = new byte[] { 0xAA, 0xBB, 0xCC };
+		st.WriteBytes(data);
+		Assert.AreEqual(3, st.Position);
+		Assert.AreEqual(0xAA, buf[0]);
+		
+		byte[] data2 = new byte[] { 0x11, 0x22, 0x33, 0x44 };
+		st.Write(data2, 1, 2); // Write 0x22, 0x33
+		Assert.AreEqual(5, st.Position);
+		Assert.AreEqual(0x22, buf[3]);
+		Assert.AreEqual(0x33, buf[4]);
+	}
+
+	[Test]
+	public void TestMarkAndSizeOf() {
+		var st = new SpanStream(new byte[10]);
+		st.WriteByte(1);
+		st.Mark(); // Marker at 1
+		st.WriteByte(2);
+		st.WriteByte(3);
+		// SizeOf = Pos(3) - Marker(1) = 2
+		Assert.AreEqual(2, st.SizeOf());
+	}
+
+	[Test]
+	public void TestStreamProperties() {
+		var st = new SpanStream(new byte[10]);
+		Assert.IsTrue(st.CanRead);
+		Assert.IsTrue(st.CanSeek);
+		Assert.IsTrue(st.CanWrite);
+		Assert.AreEqual(10, st.Length);
+		
+		Assert.Throws<NotSupportedException>(() => st.SetLength(20));
+	}
+
+	[Test]
+	public void TestCopyConstructor() {
+		var buf = new byte[] { 1, 2, 3, 4 };
+		var st1 = new SpanStream(buf);
+		st1.Position = 2;
+		
+		var st2 = new SpanStream(st1);
+		Assert.AreEqual(2, st2.Length); // Slice from pos
+		Assert.AreEqual(0, st2.Position);
+		Assert.AreEqual(3, st2.ReadByte());
+	}
 }
