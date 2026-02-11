@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Smx.SharpIO.Extensions;
 using Smx.SharpIO.Memory.Buffers;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Smx.SharpIO
 {
@@ -85,6 +86,15 @@ namespace Smx.SharpIO
 			}
 		}
 
+		public bool TryReadString(long length, [NotNullWhen(true)] out string? value, Encoding? encoding = null) {
+			if (Remaining < length) {
+				value = null;
+				return false;
+			}
+			value = ReadString(length, encoding);
+			return true;
+		}
+
 		public string ReadString(long length, Encoding? encoding = null) {
 			if(encoding == null) {
 				encoding = Encoding.ASCII;
@@ -92,6 +102,16 @@ namespace Smx.SharpIO
 			byte[] bytes = ReadBytes(length);
 			return encoding.GetString(bytes);
 		}
+
+		public bool TryReadBytes(long count, [NotNullWhen(true)] out byte[]? value) {
+			if (Remaining < count) {
+				value = null;
+				return false;
+			}
+			value = ReadBytes(count);
+			return true;
+		}
+
 		public byte[] ReadBytes(long count) {
 			byte[] ret = Memory.Slice(pos, count).ToArray();
 			pos += count;
@@ -293,6 +313,15 @@ namespace Smx.SharpIO
 			}
 		}
 
+		public unsafe bool TryRead<T>(out T value) where T : unmanaged {
+			if (Remaining < sizeof(T)) {
+				value = default;
+				return false;
+			}
+			value = Read<T>();
+			return true;
+		}
+
 		public unsafe T Read<T>() where T : unmanaged {
 			var start = Memory.Span.Slice(pos, sizeof(T));
 			T ret = MemoryMarshal64.Cast<byte, T>(start)[0];
@@ -373,6 +402,15 @@ namespace Smx.SharpIO
 			nullTerminator: true, encoding: Encoding.ASCII);
 
 
+		public unsafe bool TryReadStruct<T>(out T value) where T : unmanaged {
+			if (Remaining < sizeof(T)) {
+				value = default;
+				return false;
+			}
+			value = ReadStruct<T>();
+			return true;
+		}
+
 		public unsafe T ReadStruct<T>() where T : unmanaged {
 			int length = sizeof(T);
 			var start = Memory.Span.Slice(pos, length);
@@ -417,6 +455,20 @@ namespace Smx.SharpIO
 			this.Memory = new Memory64<byte>(newData);
 		}
 
+		public unsafe bool TryReadEnum<T>(out T value) where T : unmanaged {
+			long startPos = Position;
+			if (!TryReadFlagsEnum(out value)) {
+				return false;
+			}
+
+			if (!Enum.IsDefined(typeof(T), value)) {
+				Position = startPos;
+				value = default;
+				return false;
+			}
+			return true;
+		}
+
 		public unsafe T ReadEnum<T>() where T : unmanaged {
 			T value = ReadFlagsEnum<T>();
 
@@ -426,6 +478,20 @@ namespace Smx.SharpIO
 			}
 
 			return value;
+		}
+
+		public bool TryReadCString([NotNullWhen(true)] out string? value, Encoding? encoding = null) {
+			long start = Position;
+			long current = start;
+			while (current < Length) {
+				if (Span[current] == 0x00) {
+					value = ReadCString(encoding ?? Encoding.ASCII);
+					return true;
+				}
+				current++;
+			}
+			value = null;
+			return false;
 		}
 
 		public string ReadCString(Encoding encoding) {
@@ -438,6 +504,15 @@ namespace Smx.SharpIO
 		}
 
 		public string ReadCString() => ReadCString(Encoding.ASCII);
+
+		public unsafe bool TryReadFlagsEnum<T>(out T value) where T : unmanaged {
+			if (Remaining < sizeof(T)) {
+				value = default;
+				return false;
+			}
+			value = ReadFlagsEnum<T>();
+			return true;
+		}
 
 		public unsafe T ReadFlagsEnum<T>() where T : unmanaged {
 			object value;
@@ -528,34 +603,76 @@ namespace Smx.SharpIO
 			pos += data.LongLength;
 		}
 
+		public bool TryReadSByte(out sbyte value) => TryRead(out value);
 		public sbyte ReadSbyte() => Read<sbyte>();
 		public void WriteSByte(sbyte value) => Write(value);
 
+		public bool TryReadByte(out byte value) => TryRead(out value);
 		public new byte ReadByte() => Read<byte>();
 		public new void WriteByte(byte value) => Write(value);
 
+		public bool TryReadInt16(out short value) {
+			if (Remaining < 2) { value = default; return false; }
+			value = ReadInt16();
+			return true;
+		}
 		public short ReadInt16() => (short)u16Reader();
 		public void WriteInt16(Int16 value) => u16Writer((ushort)value);
 
+		public bool TryReadInt32(out int value) {
+			if (Remaining < 4) { value = default; return false; }
+			value = ReadInt32();
+			return true;
+		}
 		public int ReadInt32() => (int)u32Reader();
 		public void WriteInt32(Int32 value) => u32Writer((uint)value);
 
+		public bool TryReadInt64(out long value) {
+			if (Remaining < 8) { value = default; return false; }
+			value = ReadInt64();
+			return true;
+		}
 		public long ReadInt64() => (long)u64Reader();
 		public void WriteInt64(Int64 value) => u64Writer((ulong)value);
 
 		//$TODO: support precisions > 32 and 64 bits?
+		public bool TryReadSingle(out float value) {
+			if (Remaining < 4) { value = default; return false; }
+			value = ReadSingle();
+			return true;
+		}
 		public float ReadSingle() => u32Reader();
 		public void WriteSingle(float value) => u32Writer((uint)value);
 
+		public bool TryReadDouble(out double value) {
+			if (Remaining < 8) { value = default; return false; }
+			value = ReadDouble();
+			return true;
+		}
 		public double ReadDouble() => u64Reader();
 		public void WriteDouble(double value) => u64Writer((ulong)value);
 
+		public bool TryReadUInt16(out ushort value) {
+			if (Remaining < 2) { value = default; return false; }
+			value = ReadUInt16();
+			return true;
+		}
 		public ushort ReadUInt16() => u16Reader();
 		public void WriteUInt16(UInt16 value) => u16Writer(value);
 
+		public bool TryReadUInt32(out uint value) {
+			if (Remaining < 4) { value = default; return false; }
+			value = ReadUInt32();
+			return true;
+		}
 		public uint ReadUInt32() => u32Reader();
 		public void WriteUInt32(UInt32 value) => u32Writer(value);
 
+		public bool TryReadUInt64(out ulong value) {
+			if (Remaining < 8) { value = default; return false; }
+			value = ReadUInt64();
+			return true;
+		}
 		public ulong ReadUInt64() => u64Reader();
 		public void WriteUInt64(UInt64 value) => u64Writer(value);
 

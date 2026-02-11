@@ -15,9 +15,27 @@ namespace Smx.SharpIO.Extensions
 {
 	public static class SpanEx
 	{
+		public unsafe static bool TryRead<T>(this ReadOnlySpan<byte> data, int offset, out T value) where T : unmanaged {
+			if (offset < 0 || offset + sizeof(T) > data.Length) {
+				value = default;
+				return false;
+			}
+			value = data.Read<T>(offset);
+			return true;
+		}
+
 		public unsafe static T Read<T>(this ReadOnlySpan<byte> data, int offset) where T : unmanaged {
 			int length = sizeof(T);
 			return data.Slice(offset, length).Cast<T>()[0];
+		}
+
+		public unsafe static bool TryRead<T>(this ReadOnlySpan64<byte> data, long offset, out T value) where T : unmanaged {
+			if (offset < 0 || offset + sizeof(T) > data.Length) {
+				value = default;
+				return false;
+			}
+			value = data.Read<T>(offset);
+			return true;
 		}
 
 		public unsafe static T Read<T>(this ReadOnlySpan64<byte> data, long offset) where T : unmanaged {
@@ -25,9 +43,27 @@ namespace Smx.SharpIO.Extensions
 			return data.Slice(offset, length).Cast<T>()[0];
 		}
 
+		public unsafe static bool TryRead<T>(this Span<byte> data, int offset, out T value) where T : unmanaged {
+			if (offset < 0 || offset + sizeof(T) > data.Length) {
+				value = default;
+				return false;
+			}
+			value = data.Read<T>(offset);
+			return true;
+		}
+
 		public unsafe static T Read<T>(this Span<byte> data, int offset) where T : unmanaged {
 			int length = sizeof(T);
 			return data.Slice(offset, length).Cast<T>()[0];
+		}
+
+		public unsafe static bool TryRead<T>(this Span64<byte> data, long offset, out T value) where T : unmanaged {
+			if (offset < 0 || offset + sizeof(T) > data.Length) {
+				value = default;
+				return false;
+			}
+			value = data.Read<T>(offset);
+			return true;
 		}
 
 		public unsafe static T Read<T>(this Span64<byte> data, long offset) where T : unmanaged {

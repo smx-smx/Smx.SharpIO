@@ -156,6 +156,18 @@ public static class MemoryMarshal64
     }
 
     /// <summary>
+    /// Tries to read a structure of type T from a read-only span of bytes.
+    /// </summary>
+    public static bool TryRead<T>(ReadOnlySpan64<byte> source, out T value) where T : struct {
+        if (source.Length < Unsafe.SizeOf<T>()) {
+            value = default;
+            return false;
+        }
+        value = Unsafe.ReadUnaligned<T>(ref GetReference(source));
+        return true;
+    }
+
+    /// <summary>
     /// Writes a structure of type T to a span of bytes.
     /// </summary>
     public static void Write<T>(Span64<byte> destination, ref T value) where T : struct {
