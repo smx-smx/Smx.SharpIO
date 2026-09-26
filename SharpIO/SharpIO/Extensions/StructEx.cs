@@ -117,7 +117,13 @@ namespace Smx.SharpIO.Extensions
 			var sz = Marshal.SizeOf(data);
 			var mem = Marshal.AllocHGlobal(sz);
 			try {
-				Marshal.StructureToPtr(data, mem, false);
+				try {
+					Marshal.StructureToPtr(data, mem, false);
+				} catch (ArgumentException) {
+					// garbage (e.g. encrypted) data with unencodable strings:
+					// return unswapped so callers can Fail gracefully
+					return data;
+				}
 				var bytes = new byte[sz];
 				Marshal.Copy(mem, bytes, 0, sz);
 
