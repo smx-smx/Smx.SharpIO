@@ -88,5 +88,13 @@ namespace SharpIO.Tests
 			var magic = ((ReadOnlySpan<byte>)buf).GetField<byte, TestHeader, uint>("fileSize");
 			Assert.AreEqual(4, magic.Length);
 		}
+
+		[Test]
+		public void ReadStruct_ShortBuffer_ThrowsManaged()
+		{
+			// used to overread natively (SIGSEGV on tiny nested artifacts)
+			var tiny = new byte[4];
+			Assert.Throws<ArgumentOutOfRangeException>(() => ((ReadOnlySpan<byte>)tiny).ReadStruct<TestHeader>());
+		}
 	}
 }

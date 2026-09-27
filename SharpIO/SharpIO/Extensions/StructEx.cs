@@ -166,6 +166,9 @@ namespace Smx.SharpIO.Extensions
 
 		public static unsafe T ReadStruct<T>(this Span64<byte> data, long offset = 0) where T : struct
 		{
+			if (offset < 0 || System.Runtime.InteropServices.Marshal.SizeOf<T>() > data.Length - offset) {
+				throw new System.ArgumentOutOfRangeException(nameof(offset));
+			}
 			fixed (byte* dptr = data) {
 				return RespectEndianness(Marshal.PtrToStructure<T>(new IntPtr(dptr + offset)));
 			}
@@ -173,6 +176,9 @@ namespace Smx.SharpIO.Extensions
 
 		public static unsafe T ReadStruct<T>(this Span<byte> data, int offset = 0) where T : struct
 		{
+			if (offset < 0 || System.Runtime.InteropServices.Marshal.SizeOf<T>() > data.Length - offset) {
+				throw new System.ArgumentOutOfRangeException(nameof(offset));
+			}
 			fixed (byte* dptr = data) {
 				return RespectEndianness(Marshal.PtrToStructure<T>(new IntPtr(dptr + offset)));
 			}
@@ -180,6 +186,9 @@ namespace Smx.SharpIO.Extensions
 
 		public static unsafe T ReadStruct<T>(this ReadOnlySpan<byte> data, int offset = 0) where T : struct
 		{
+			if (offset < 0 || System.Runtime.InteropServices.Marshal.SizeOf<T>() > data.Length - offset) {
+				throw new System.ArgumentOutOfRangeException(nameof(offset));
+			}
 			fixed (byte* dptr = data) {
 				return RespectEndianness(Marshal.PtrToStructure<T>(new IntPtr(dptr + offset)));
 			}
@@ -187,6 +196,9 @@ namespace Smx.SharpIO.Extensions
 
 		public static unsafe T ReadStruct<T>(this ReadOnlySpan64<byte> data, long offset = 0) where T : struct
 		{
+			if (offset < 0 || System.Runtime.InteropServices.Marshal.SizeOf<T>() > data.Length - offset) {
+				throw new System.ArgumentOutOfRangeException(nameof(offset));
+			}
 			fixed (byte* dptr = data) {
 				return RespectEndianness(Marshal.PtrToStructure<T>(new IntPtr(dptr + offset)));
 			}
